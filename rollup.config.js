@@ -12,7 +12,8 @@ export default {
     {
       file: 'dist/locus.min.js',
       format: 'iife',
-      name: 'DotAtlas', // Replicating the dotAtlas global name
+      name: 'Locus', // Export as Locus namespace
+      exports: 'default', // Expose the default export directly
       plugins: [terser()]
     },
     { file: pkg.module, format: 'es' },

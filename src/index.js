@@ -3,10 +3,11 @@ import { SpatialIndex } from './utils/spatial.js';
 import { LabelManager } from './layers/labels.js';
 import { Camera } from './core/camera.js';
 import { OutlineLayer } from './layers/outline.js';
+import { ElevationLayer } from './layers/elevation.js';
 
-export class DotAtlas {
+export default class DotAtlas {
   constructor(options) {
-    this.element = options.element;
+    this.element = options.container;
     this.options = options;
     
     // Core Modules
@@ -15,9 +16,12 @@ export class DotAtlas {
     this.labels = new LabelManager();
     this.camera = new Camera(() => this.redraw());
     this.outlineLayer = new OutlineLayer(this.renderer.gl);
+    this.elevationLayer = new ElevationLayer(this.renderer.gl);
 
     // Initial State
-    if (options.points) this.set('points', options.points);
+    if (options.points) {
+      this.setData(options.points);
+    }
     if (options.layers) this.set('layers', options.layers);
     
     this._setupInteractions();
@@ -26,6 +30,15 @@ export class DotAtlas {
   static supported() { return !!window.WebGL2RenderingContext; }
 
   static embed(opts) { return new DotAtlas(opts); }
+
+  setData(points) {
+    this.set('points', points);
+    this.elevationLayer.update(points);
+  }
+
+  setLayers(layers) {
+    this.set('layers', layers);
+  }
 
   set(key, value) {
     this.options[key] = value;
@@ -44,12 +57,25 @@ export class DotAtlas {
     });
   }
 
+  render() {
+    this.redraw();
+  }
+
   redraw() {
     const visibleLabels = this.labels.getVisibleLabels(
       this.camera.zoom, 
       this.renderer.getViewport()
     );
-    this.renderer.render(this.options.layers, visibleLabels, this.camera.pos, this.camera.zoom);
+    
+    // Pass components for rendering
+    this.renderer.render(
+      this.options.layers, 
+      visibleLabels, 
+      this.camera.pos, 
+      this.camera.zoom,
+      this.elevationLayer,
+      this.outlineLayer
+    );
   }
 
   resize() {
